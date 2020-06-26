@@ -2,8 +2,8 @@ const iBBQ = require('..')
 
 iBBQ.connect().then(_ => {
     console.log("Connected")
-    iBBQ.onMeasurements(measurement => {
-        console.log("Test", measurement)
+    iBBQ.startMeasurements((err, measurement) => {
+        console.log(err, measurement)
     })
 }).catch(err => {
     console.error(err);
