@@ -2,16 +2,16 @@
   "name": "grillmaster",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "noble": "^1.9.1",
     "async": "^3.2.0",
     "@abandonware/noble": "^1.9.2-9",
+    "promise": "^8.1.0",
     "xpc-connection": "sandeepmistry/node-xpc-connection#pull/26/head"
   },
   "resolutions": {
