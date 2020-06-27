@@ -1,8 +1,9 @@
-const iBBQ = require('..')
+const iBBQ = require('../dist/index')
 
-iBBQ.connect().then(_ => {
+const bbq = new iBBQ.iBBQ();
+bbq.connect().then(_ => {
     console.log("Connected")
-    iBBQ.startMeasurements((err, measurement) => {
+    bbq.startMeasurements((err, measurement) => {
         console.log(err, measurement)
     })
 }).catch(err => {

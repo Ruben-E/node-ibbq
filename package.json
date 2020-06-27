@@ -2,9 +2,11 @@
   "name": "grillmaster",
   "version": "1.0.0",
   "description": "",
-  "main": "lib/index.js",
+  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "tsc": "tsc"
   },
   "author": "",
   "license": "ISC",
@@ -15,5 +17,8 @@
   },
   "resolutions": {
     "xpc-connection": "sandeepmistry/node-xpc-connection#pull/26/head"
+  },
+  "devDependencies": {
+    "typescript": "^3.9.5"
   }
 }
