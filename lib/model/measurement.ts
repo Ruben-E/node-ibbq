@@ -1,5 +1,6 @@
 export interface Probe {
     number: number;
+    connected: boolean
     temperature: number | undefined;
 }
 

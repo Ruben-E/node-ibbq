@@ -1,18 +1,14 @@
-const noble = require('@abandonware/noble');
-
+import {Characteristics} from "./model/characteristics";
 import {Measurement, Probe} from "./model/measurement";
-import {Characteristic, Peripheral} from "@abandonware/noble";
+import {Peripheral} from "@abandonware/noble";
+
+const noble = require('@abandonware/noble');
 
 export class iBBQ {
     bluetoothName: string;
     initialized: boolean = false;
     connected: boolean = false;
-
-    settingResultCharacteristic: Characteristic | undefined = undefined;
-    loginCharacteristic: Characteristic | undefined = undefined;
-    historicDataCharacteristic: Characteristic | undefined = undefined;
-    realTimeDataCharacteristic: Characteristic | undefined = undefined;
-    settingUpdateCharacteristic: Characteristic | undefined = undefined;
+    characteristics?: Characteristics = undefined;
 
     constructor(bluetoothName: string = 'iBBQ') {
         this.bluetoothName = bluetoothName;
@@ -31,12 +27,20 @@ export class iBBQ {
     connect(): Promise<void> {
         return this.makeConnection()
             .then((peripheral: Peripheral) => this.scanCharacteristics(peripheral))
-            .then(() => this.login())
+            .then((characteristics: Characteristics) => {
+                this.characteristics = characteristics;
+                return this.login()
+            })
     }
 
     startMeasurements(onMeasurements: (measurements: Measurement) => void, onError: (error: Error) => void) {
+        if (!this.connected) {
+            onError(new Error("Not connected"));
+            return;
+        }
+
         this.enableRealTimeData().then(_ => {
-            this.realTimeDataCharacteristic?.on('data', (data: Buffer) => {
+            this.characteristics?.realTimeData?.on('data', (data: Buffer) => {
                 const probes: Probe[] = []
 
                 for (let i = 0; i < data.length; i++) {
@@ -47,13 +51,13 @@ export class iBBQ {
                             temperature = undefined;
                         }
 
-                        probes.push({number: probe, temperature: temperature});
+                        probes.push({number: probe, connected: temperature != undefined, temperature: temperature});
                     }
                 }
                 onMeasurements({dateTime: new Date(), probes: probes});
             });
 
-            this.realTimeDataCharacteristic?.notify(true, (err) => {
+            this.characteristics?.realTimeData?.notify(true, (err) => {
                 if (err) {
                     onError(new Error(err));
                 }
@@ -84,7 +88,7 @@ export class iBBQ {
         })
     }
 
-    private scanCharacteristics(peripheral: Peripheral): Promise<void> {
+    private scanCharacteristics(peripheral: Peripheral): Promise<Characteristics> {
         return new Promise((success, error) => {
             peripheral.discoverServices(['fff0'], (err, services) => {
                 if (err) return error(err);
@@ -94,13 +98,15 @@ export class iBBQ {
                     service.discoverCharacteristics(['fff1', 'fff2', 'fff3', 'fff4', 'fff5'], (err, characteristics) => {
                         if (err) return error(err);
 
-                        this.settingResultCharacteristic = characteristics.find(c => c.uuid === 'fff1');
-                        this.loginCharacteristic = characteristics.find(c => c.uuid === 'fff2');
-                        this.historicDataCharacteristic = characteristics.find(c => c.uuid === 'fff3');
-                        this.realTimeDataCharacteristic = characteristics.find(c => c.uuid === 'fff4');
-                        this.settingUpdateCharacteristic = characteristics.find(c => c.uuid === 'fff5');
+                        const find = (uuid: string) => characteristics.find(c => c.uuid === uuid);
 
-                        success();
+                        success({
+                            settingResult: find('fff1'),
+                            login: find('fff2'),
+                            historicData: find('fff3'),
+                            realTimeData: find('fff4'),
+                            settingUpdate: find('fff5')
+                        });
                     });
                 }
             });
@@ -110,7 +116,7 @@ export class iBBQ {
     private login(): Promise<void> {
         return new Promise((success, error) => {
             const data = Buffer.from([0x21, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0xb8, 0x22, 0x00, 0x00, 0x00, 0x00, 0x00])
-            this.loginCharacteristic?.write(data, true, (err) => {
+            this.characteristics?.login?.write(data, true, (err) => {
                 if (err) return error();
 
                 this.connected = true;
@@ -123,7 +129,7 @@ export class iBBQ {
     private enableRealTimeData() {
         return new Promise((success, error) => {
             const data = Buffer.from([0x0B, 0x01, 0x00, 0x00, 0x00, 0x00])
-            this.settingUpdateCharacteristic?.write(data, true, (err) => {
+            this.characteristics?.settingUpdate?.write(data, true, (err) => {
                 if (err) return error();
                 success();
             });
