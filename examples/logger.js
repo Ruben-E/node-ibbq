@@ -1,10 +1,11 @@
 const iBBQ = require('../dist/index')
 
 const thermometer = new iBBQ.iBBQ();
+const events = iBBQ.Events;
 thermometer.connect()
     .then(_ => {
         console.log("Connected")
-        thermometer.startMeasurements(measurement => {
+        thermometer.readMeasurements(measurement => {
             console.log(measurement);
         }, error => {
             console.log(error);
@@ -12,3 +13,7 @@ thermometer.connect()
     }).catch(err => {
         console.error(err);
     })
+
+thermometer.on(events.Connected, () => {
+   console.log('Jeej')
+});

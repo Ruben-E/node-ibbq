@@ -1,16 +1,21 @@
 import {Characteristics} from "./model/characteristics";
 import {Measurement, Probe} from "./model/measurement";
+import {Events} from "./model/events"
 import {Peripheral} from "@abandonware/noble";
+import {EventEmitter} from "events";
 
 const noble = require('@abandonware/noble');
 
-export class iBBQ {
+export class iBBQ extends EventEmitter{
     bluetoothName: string;
     initialized: boolean = false;
     connected: boolean = false;
+    peripheral?: Peripheral = undefined;
     characteristics?: Characteristics = undefined;
 
     constructor(bluetoothName: string = 'iBBQ') {
+        super();
+
         this.bluetoothName = bluetoothName;
 
         noble.on('stateChange', (state: string) => {
@@ -22,18 +27,29 @@ export class iBBQ {
                 this.initialized = false;
             }
         });
+
+        noble.on('disconnect', () => {
+            this.emit(Events.Disconnected)
+        })
     }
 
     connect(): Promise<void> {
         return this.makeConnection()
-            .then((peripheral: Peripheral) => this.scanCharacteristics(peripheral))
+            .then((peripheral: Peripheral) => {
+                this.peripheral = peripheral;
+                return this.scanCharacteristics(peripheral)
+            })
             .then((characteristics: Characteristics) => {
                 this.characteristics = characteristics;
                 return this.login()
+            }).then(() => {
+                this.connected = true;
+                this.emit(Events.Connected);
+                return Promise.resolve();
             })
     }
 
-    startMeasurements(onMeasurements: (measurements: Measurement) => void, onError: (error: Error) => void) {
+    readMeasurements(onMeasurements: (measurements: Measurement) => void, onError: (error: Error) => void) {
         if (!this.connected) {
             onError(new Error("Not connected"));
             return;
@@ -78,8 +94,6 @@ export class iBBQ {
                         peripheral.connect((err) => {
                             if (err) return error(err)
 
-                            console.log(this);
-
                             success(peripheral);
                         });
                     }
@@ -118,8 +132,6 @@ export class iBBQ {
             const data = Buffer.from([0x21, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0xb8, 0x22, 0x00, 0x00, 0x00, 0x00, 0x00])
             this.characteristics?.login?.write(data, true, (err) => {
                 if (err) return error();
-
-                this.connected = true;
 
                 success();
             });
