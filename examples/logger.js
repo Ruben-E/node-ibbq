@@ -15,5 +15,8 @@ thermometer.connect()
     })
 
 thermometer.on(events.Connected, () => {
-   console.log('Jeej')
+});
+
+thermometer.on(events.BatteryLevel, (batteryLevel) => {
+    console.log(batteryLevel);
 });
