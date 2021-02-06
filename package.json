@@ -11,8 +11,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "async": "^3.2.0",
     "@abandonware/noble": "^1.9.2-9",
+    "@types/node": "^14.14.25",
+    "async": "^3.2.0",
     "xpc-connection": "sandeepmistry/node-xpc-connection#pull/26/head"
   },
   "resolutions": {

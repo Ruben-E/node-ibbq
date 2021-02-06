@@ -147,7 +147,7 @@ export class iBBQ extends EventEmitter {
 
                 this.requestBatteryLevel()
                 poll();
-                success();
+                success(null);
             });
         });
     }
